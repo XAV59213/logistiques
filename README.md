@@ -2,21 +2,28 @@
 
 Application Streamlit de gestion logistique municipale pour la Ville de Marly.
 
-Ce dépôt fournit une base exécutable et structurée pour piloter les besoins logistiques d’une collectivité : authentification, base SQLite, pages métiers, utilitaires, sauvegardes, notifications, inventaire et administration.
+## Aperçu
 
-## Fonctionnalités disponibles
+Ce projet fournit une base structurée et exécutable pour une application métier dédiée à la logistique d’une collectivité :
 
-- Authentification avec création automatique du premier compte administrateur
-- Initialisation automatique de la base SQLite
-- Navigation multi-pages avec Streamlit
-- Structure modulaire avec dossier `utils/` et dossier `pages/`
-- Gestion de base des utilisateurs
-- Gestion d’inventaire avec QR Code
-- Gestion des bâtiments et du patrimoine
-- Centre de notifications
-- Exports CSV et sauvegardes SQLite
-- Profil utilisateur
-- Thème CSS personnalisé
+- gestion du stock
+- gestion des événements
+- fournisseurs et commandes
+- patrimoine et sécurité
+- inventaire QR Code
+- notifications
+- exports et sauvegardes
+- profil utilisateur
+- administration
+
+## Stack technique
+
+- Python 3.11+
+- Streamlit
+- SQLite
+- bcrypt
+- Docker
+- GitHub Actions
 
 ## Structure du projet
 
@@ -30,15 +37,7 @@ Logistique_Pro/
 ├── README.md
 ├── LICENSE
 ├── assets/
-│   ├── css/
-│   │   └── theme.css
-│   ├── icons/
-│   └── photos/
 ├── data/
-│   ├── backups/
-│   ├── inventaires/
-│   ├── reservations/
-│   └── stock/
 ├── docs/
 ├── pages/
 └── utils/
