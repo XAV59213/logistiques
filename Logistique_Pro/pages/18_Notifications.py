@@ -13,19 +13,6 @@ page_header(
 conn = get_connection()
 cur = conn.cursor()
 
-# Sécurité : création de table si absente
-cur.execute("""
-    CREATE TABLE IF NOT EXISTS notifications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        message TEXT NOT NULL,
-        level TEXT DEFAULT 'info',
-        is_read INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-""")
-conn.commit()
-
 st.subheader("Créer une notification")
 
 with st.form("add_notification_form"):
