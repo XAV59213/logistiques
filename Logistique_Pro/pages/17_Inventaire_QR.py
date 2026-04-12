@@ -15,23 +15,6 @@ page_header(
 conn = get_connection()
 cur = conn.cursor()
 
-# Création de la table si absente
-cur.execute("""
-    CREATE TABLE IF NOT EXISTS stock_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        category TEXT,
-        quantity INTEGER DEFAULT 0,
-        unit TEXT DEFAULT 'pcs',
-        min_threshold INTEGER DEFAULT 0,
-        location TEXT,
-        qr_code TEXT,
-        notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-""")
-conn.commit()
-
 st.subheader("Ajouter un article")
 
 with st.form("add_stock_item_form"):
