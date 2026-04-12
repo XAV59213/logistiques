@@ -1,0 +1,35 @@
+# Environnement Python
+.venv/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+
+# Base de données
+data/database.db
+
+# Logs
+data/app.log
+
+# Dossiers dynamiques
+data/backups/*
+data/reservations/*
+data/stock/*
+data/inventaires/*
+
+# Garder les dossiers vides
+!data/backups/.gitkeep
+!data/reservations/.gitkeep
+!data/stock/.gitkeep
+!data/inventaires/.gitkeep
+
+# Assets dynamiques
+assets/photos/*
+assets/icons/*
+
+!assets/photos/.gitkeep
+!assets/icons/.gitkeep
+
+# Secrets
+.env
