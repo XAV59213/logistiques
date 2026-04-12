@@ -10,10 +10,30 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-mkdir -p data/backups data/reservations data/stock data/inventaires
-mkdir -p assets/icons assets/photos utils pages
+mkdir -p data
+mkdir -p data/backups
+mkdir -p data/reservations
+mkdir -p data/stock
+mkdir -p data/inventaires
 
-[ -f .env ] || cp .env.example .env
+mkdir -p assets/css
+mkdir -p assets/icons
+mkdir -p assets/photos
+
+mkdir -p static/photos
+mkdir -p docs
+mkdir -p utils
+mkdir -p pages
+
+if [ ! -f .env ]; then
+  if [ -f .env.example ]; then
+    cp .env.example .env
+  else
+    echo "Fichier .env.example manquant"
+    exit 1
+  fi
+fi
 
 echo "Installation terminée."
-echo "Lancer avec : streamlit run main.py"
+echo "Active l'environnement : source .venv/bin/activate"
+echo "Puis lance : streamlit run main.py"
