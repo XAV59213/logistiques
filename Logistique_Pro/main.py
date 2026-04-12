@@ -38,7 +38,7 @@ with st.sidebar:
     st.write(f"**Utilisateur :** {user['email']}")
     st.write(f"**Rôle :** {user['role']}")
 
-    if st.button("Se déconnecter", width="stretch"):
+    if st.button("Se déconnecter", use_container_width=True):
         logout()
 
 st.title(Config.APP_NAME)
