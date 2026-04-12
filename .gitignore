@@ -1,35 +1,94 @@
-# Environnement Python
+# =====================================================
+# ENVIRONNEMENT PYTHON
+# =====================================================
 .venv/
+venv/
+env/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# OS
+# =====================================================
+# FICHIERS SYSTEME
+# =====================================================
 .DS_Store
+Thumbs.db
 
-# Base de données
+# =====================================================
+# CONFIG / SECRETS
+# =====================================================
+.env
+.env.local
+.env.*.local
+
+# =====================================================
+# BASE DE DONNEES
+# =====================================================
 data/database.db
+*.sqlite
+*.db
 
-# Logs
+# =====================================================
+# LOGS
+# =====================================================
 data/app.log
+*.log
 
-# Dossiers dynamiques
+# =====================================================
+# DONNEES DYNAMIQUES (NE PAS VERSIONNER)
+# =====================================================
 data/backups/*
 data/reservations/*
 data/stock/*
 data/inventaires/*
 
-# Garder les dossiers vides
+# GARDER LA STRUCTURE DES DOSSIERS
 !data/backups/.gitkeep
 !data/reservations/.gitkeep
 !data/stock/.gitkeep
 !data/inventaires/.gitkeep
 
-# Assets dynamiques
+# =====================================================
+# ASSETS DYNAMIQUES
+# =====================================================
 assets/photos/*
 assets/icons/*
 
 !assets/photos/.gitkeep
 !assets/icons/.gitkeep
 
-# Secrets
-.env
+# QR codes générés
+assets/photos/qr/*
+
+# =====================================================
+# DOSSIER STATIC
+# =====================================================
+static/photos/*
+
+!static/photos/.gitkeep
+
+# =====================================================
+# EXPORTS / FICHIERS TEMPORAIRES
+# =====================================================
+*.csv
+*.xlsx
+*.zip
+
+# =====================================================
+# IDE / EDITEURS
+# =====================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =====================================================
+# STREAMLIT
+# =====================================================
+.streamlit/
+
+# =====================================================
+# CACHE
+# =====================================================
+.cache/
