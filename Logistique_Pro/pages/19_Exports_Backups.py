@@ -25,7 +25,7 @@ st.subheader("Exports CSV")
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("Exporter les utilisateurs", width="stretch"):
+    if st.button("Exporter les utilisateurs", use_container_width=True):
         try:
             df_users = pd.read_sql_query("SELECT * FROM users ORDER BY id DESC", conn)
             if df_users.empty:
@@ -37,13 +37,13 @@ with col1:
                     data=csv_data,
                     file_name="users.csv",
                     mime="text/csv",
-                    width="stretch",
+                    use_container_width=True,
                 )
         except Exception as e:
             st.error(f"Erreur export utilisateurs : {e}")
 
 with col2:
-    if st.button("Exporter le stock", width="stretch"):
+    if st.button("Exporter le stock", use_container_width=True):
         try:
             df_stock = pd.read_sql_query("SELECT * FROM stock_items ORDER BY id DESC", conn)
             if df_stock.empty:
@@ -55,7 +55,7 @@ with col2:
                     data=csv_data,
                     file_name="stock_items.csv",
                     mime="text/csv",
-                    width="stretch",
+                    use_container_width=True,
                 )
         except Exception as e:
             st.error(f"Erreur export stock : {e}")
@@ -65,7 +65,7 @@ st.subheader("Sauvegarde base de données")
 
 db_path = Path(Config.DB_PATH)
 
-if st.button("Créer une sauvegarde SQLite", width="stretch"):
+if st.button("Créer une sauvegarde SQLite", use_container_width=True):
     if not db_path.exists():
         st.error("Aucune base de données trouvée.")
     else:
@@ -98,7 +98,7 @@ else:
                         file_name=backup_file.name,
                         mime="application/octet-stream",
                         key=f"dl_{backup_file.name}",
-                        width="stretch",
+                        use_container_width=True,
                     )
 
 conn.close()
