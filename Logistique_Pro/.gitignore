@@ -1,0 +1,35 @@
+# Environnement Python
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Variables sensibles
+.env
+
+# Base de données
+data/database.db
+
+# Logs
+data/app.log
+
+# Uploads / images temporaires
+assets/photos/*
+!assets/photos/.gitkeep
+
+# Icons si vides
+assets/icons/*
+!assets/icons/.gitkeep
+
+# Static
+static/photos/*
+!static/photos/.gitkeep
