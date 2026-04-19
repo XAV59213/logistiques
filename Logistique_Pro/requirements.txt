@@ -13,3 +13,4 @@ psutil
 jinja2
 python-dotenv
 matplotlib
+qrcode[pil]
