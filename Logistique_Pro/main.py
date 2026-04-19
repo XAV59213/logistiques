@@ -11,7 +11,6 @@ import utils.style as style
 from config import DEFAULT_CONFIG
 
 
-# ====================== CONFIGURATION PAGE ======================
 st.set_page_config(
     page_title=DEFAULT_CONFIG["site_title"],
     page_icon="🚛",
@@ -19,7 +18,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ====================== INITIALISATION ======================
 db.init_database()
 
 if "user" not in st.session_state:
@@ -28,14 +26,10 @@ if "user" not in st.session_state:
 if "theme" not in st.session_state:
     st.session_state.theme = DEFAULT_CONFIG["default_theme"]
 
-
-# ====================== STYLE GLOBAL ======================
 style.apply_global_style()
 
 
-# ====================== OUTILS ======================
 def load_page(module_name: str) -> None:
-    """Charge dynamiquement une page."""
     try:
         module = importlib.import_module(module_name)
         if hasattr(module, "show"):
@@ -49,13 +43,11 @@ def load_page(module_name: str) -> None:
 
 
 def logout() -> None:
-    """Déconnecte l'utilisateur courant."""
     st.session_state.user = None
     st.rerun()
 
 
 def get_menu_options(user: Optional[Dict]) -> List[str]:
-    """Retourne les options du menu selon le rôle et le statut."""
     if not user:
         return ["Connexion", "Créer un compte"]
 
@@ -68,6 +60,7 @@ def get_menu_options(user: Optional[Dict]) -> List[str]:
     if role == "admin":
         return [
             "Tableau de Bord",
+            "Validation Comptes",
             "Validation Demandes",
             "Catalogue Articles",
             "Inventaire",
@@ -110,13 +103,13 @@ def get_menu_options(user: Optional[Dict]) -> List[str]:
 
 
 def get_icon_map() -> Dict[str, str]:
-    """Associe une icône Bootstrap à chaque entrée du menu."""
     return {
         "Connexion": "box-arrow-in-right",
         "Créer un compte": "person-plus",
         "Compte en attente": "hourglass-split",
         "Tableau de Bord": "house",
         "Mon Tableau de Bord": "house",
+        "Validation Comptes": "person-check",
         "Validation Demandes": "clipboard-check",
         "Catalogue Articles": "box-seam",
         "Inventaire": "boxes",
@@ -132,7 +125,6 @@ def get_icon_map() -> Dict[str, str]:
 
 
 def render_pending_account_page() -> None:
-    """Affichage du compte en attente."""
     st.title("⏳ Compte en attente de validation")
     st.info(
         """
@@ -147,7 +139,6 @@ Merci de votre patience.
         logout()
 
 
-# ====================== SIDEBAR ======================
 with st.sidebar:
     logo_path = Path("assets/logo/logo.png")
 
@@ -222,7 +213,6 @@ with st.sidebar:
         st.rerun()
 
 
-# ====================== ROUTAGE PRINCIPAL ======================
 user = st.session_state.user
 
 if user is None:
@@ -250,6 +240,9 @@ else:
         if selected in ["Tableau de Bord", "Mon Tableau de Bord"]:
             load_page("pages.03_Tableau_de_bord")
 
+        elif selected == "Validation Comptes" and user_role == "admin":
+            load_page("pages.02_Validation_Comptes")
+
         elif selected == "Validation Demandes" and user_role == "admin":
             load_page("pages.06_Validation_Demandes")
 
@@ -269,7 +262,6 @@ else:
             load_page("pages.05_Mes_Demandes")
 
         elif selected == "Mon Profil":
-            # Page avec fonction show()
             load_page("pages.12_Mon_Profil")
 
         elif selected == "Administration Site" and user_role == "admin":
@@ -279,7 +271,6 @@ else:
             load_page("pages.10_Administration_Systeme")
 
         elif selected == "Exports & Backups" and user_role == "admin":
-            # Cette page s'exécute directement à l'import
             try:
                 importlib.import_module("pages.19_Exports_Backups")
             except Exception as e:
@@ -288,8 +279,6 @@ else:
         else:
             st.info("🚧 Page en cours de développement...")
 
-
-# ====================== FOOTER ======================
 st.markdown(
     """
     <div class="custom-footer">
