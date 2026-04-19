@@ -7,8 +7,9 @@ bcrypt
 weasyprint
 pillow
 requests
-psutil
-python-dotenv
-jinja2
 plotly
-streamlit-aggrid
+openpyxl
+psutil
+jinja2
+python-dotenv
+matplotlib
