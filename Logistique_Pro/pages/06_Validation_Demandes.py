@@ -2,24 +2,20 @@
 """
 Page Validation des Demandes
 Accessible uniquement aux administrateurs.
-Permet de consulter, valider, refuser et commenter les vraies demandes.
-Option de décrémentation du stock réel des articles à la validation.
+
+Fonctionnalités :
+- consultation des vraies demandes
+- filtrage / recherche
+- détail des lignes
+- commentaire admin
+- validation / refus
+- décrémentation de stock sécurisée avec stock_applied
 """
 
 import pandas as pd
 import streamlit as st
 
 import utils.database as db
-
-
-def _get_status_color(statut: str) -> str:
-    mapping = {
-        "En attente": "orange",
-        "Validée": "green",
-        "Refusée": "red",
-        "Terminée": "blue",
-    }
-    return mapping.get(statut, "gray")
 
 
 def _load_demandes_dataframe() -> pd.DataFrame:
@@ -38,6 +34,7 @@ def _load_demandes_dataframe() -> pd.DataFrame:
                 "statut",
                 "montant_estime",
                 "commentaire_admin",
+                "stock_applied",
                 "created_at",
                 "updated_at",
             ]
@@ -54,7 +51,7 @@ def _load_demande_lignes_dataframe(demande_id: int) -> pd.DataFrame:
 
 def show() -> None:
     st.title("✅ Validation des Demandes")
-    st.caption("Demandes en attente et traitement administratif")
+    st.caption("Traitement administratif des demandes")
 
     user = st.session_state.get("user")
     if not user or user.get("role") != "admin":
@@ -73,8 +70,8 @@ def show() -> None:
     df["statut"] = df["statut"].fillna("En attente")
     df["commentaire_admin"] = df["commentaire_admin"].fillna("")
     df["montant_estime"] = pd.to_numeric(df["montant_estime"], errors="coerce").fillna(0.0)
+    df["stock_applied"] = pd.to_numeric(df["stock_applied"], errors="coerce").fillna(0).astype(int)
 
-    # ====================== FILTRES ======================
     st.subheader("Filtres")
     col1, col2, col3 = st.columns(3)
 
@@ -85,7 +82,7 @@ def show() -> None:
         )
 
     with col2:
-        search = st.text_input("Recherche (titre / motif / demandeur / lieu)").strip()
+        search = st.text_input("Recherche").strip()
 
     with col3:
         sort_order = st.selectbox(
@@ -113,7 +110,6 @@ def show() -> None:
         ascending=(sort_order == "Plus anciennes d'abord"),
     )
 
-    # ====================== TABLEAU ======================
     st.subheader("Liste des demandes")
 
     display_df = filtered_df[
@@ -126,9 +122,14 @@ def show() -> None:
             "lieu",
             "statut",
             "montant_estime",
+            "stock_applied",
             "created_at",
         ]
     ].copy()
+
+    display_df["stock_applied"] = display_df["stock_applied"].apply(
+        lambda x: "Oui" if int(x) == 1 else "Non"
+    )
 
     display_df = display_df.rename(
         columns={
@@ -140,6 +141,7 @@ def show() -> None:
             "lieu": "Lieu",
             "statut": "Statut",
             "montant_estime": "Montant estimé (€)",
+            "stock_applied": "Stock décrémenté",
             "created_at": "Créée le",
         }
     )
@@ -150,7 +152,6 @@ def show() -> None:
         st.warning("Aucune demande ne correspond aux filtres.")
         st.stop()
 
-    # ====================== SÉLECTION ======================
     st.subheader("Traitement d'une demande")
     demande_ids = filtered_df["id"].tolist()
     selected_id = st.selectbox("Sélectionner une demande", demande_ids)
@@ -167,6 +168,9 @@ def show() -> None:
         st.write(f"**Statut actuel :** {selected_row['statut']}")
         st.write(f"**Montant estimé :** {float(selected_row['montant_estime']):.2f} €")
         st.write(f"**Commentaire admin actuel :** {selected_row['commentaire_admin'] or '-'}")
+        st.write(
+            f"**Stock déjà décrémenté :** {'Oui' if int(selected_row['stock_applied']) == 1 else 'Non'}"
+        )
         st.caption(f"Créée le : {selected_row['created_at']}")
 
     st.subheader("Lignes de la demande")
@@ -190,7 +194,6 @@ def show() -> None:
 
         st.dataframe(display_lignes, use_container_width=True, hide_index=True)
 
-    # ====================== ACTIONS ADMIN ======================
     st.subheader("Actions administratives")
 
     commentaire_admin = st.text_area(
@@ -200,38 +203,39 @@ def show() -> None:
         key=f"comment_admin_{selected_id}",
     )
 
-    can_apply_stock = selected_row["statut"] != "Validée"
+    stock_already_applied = int(selected_row["stock_applied"]) == 1
+    demande_can_apply_stock = db.can_apply_demande_stock(int(selected_id))
 
     decrement_stock = st.checkbox(
         "Décrémenter le stock réel des articles lors de la validation",
         value=False,
-        disabled=not can_apply_stock,
-        help="Option disponible uniquement si la demande n'est pas déjà validée.",
+        disabled=stock_already_applied or not demande_can_apply_stock,
+        help="Désactivé si le stock a déjà été appliqué.",
     )
+
+    if stock_already_applied:
+        st.info("Le stock a déjà été décrémenté pour cette demande.")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         if st.button("✅ Valider la demande", type="primary", use_container_width=True):
             try:
-                if selected_row["statut"] != "Validée":
-                    db.update_demande_status(
-                        demande_id=int(selected_id),
-                        statut="Validée",
-                        commentaire_admin=commentaire_admin,
-                    )
+                apply_stock_now = decrement_stock and db.can_apply_demande_stock(int(selected_id))
 
-                    if decrement_stock:
-                        db.apply_demande_stock(int(selected_id))
+                db.update_demande_status(
+                    demande_id=int(selected_id),
+                    statut="Validée",
+                    commentaire_admin=commentaire_admin,
+                )
 
-                    st.success(f"Demande #{selected_id} validée avec succès.")
+                if apply_stock_now:
+                    db.apply_demande_stock(int(selected_id))
+                    st.success(f"Demande #{selected_id} validée avec décrémentation du stock.")
                 else:
-                    db.update_demande_status(
-                        demande_id=int(selected_id),
-                        statut="Validée",
-                        commentaire_admin=commentaire_admin,
-                    )
-                    st.info("La demande était déjà validée. Commentaire mis à jour uniquement.")
+                    if decrement_stock:
+                        st.info("Le stock n'a pas été décrémenté, car il l'était déjà.")
+                    st.success(f"Demande #{selected_id} validée avec succès.")
 
                 st.rerun()
             except Exception as e:
