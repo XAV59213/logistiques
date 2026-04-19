@@ -44,6 +44,7 @@ def load_page(module_name: str) -> None:
 
 def logout() -> None:
     st.session_state.user = None
+    st.session_state.theme = DEFAULT_CONFIG["default_theme"]
     st.rerun()
 
 
@@ -139,6 +140,16 @@ Merci de votre patience.
         logout()
 
 
+# Recharge le thème utilisateur si connecté
+if st.session_state.user:
+    st.session_state.theme = st.session_state.user.get(
+        "theme_prefere",
+        DEFAULT_CONFIG["default_theme"]
+    )
+
+# Réapplique le style après mise à jour éventuelle du thème
+style.apply_global_style()
+
 with st.sidebar:
     logo_path = Path("assets/logo/logo.png")
 
@@ -198,6 +209,7 @@ with st.sidebar:
 
     theme_options = ["Municipal Bleu", "Mode Clair", "Mode Sombre"]
     current_theme = st.session_state.get("theme", DEFAULT_CONFIG["default_theme"])
+
     if current_theme not in theme_options:
         current_theme = DEFAULT_CONFIG["default_theme"]
 
@@ -210,6 +222,17 @@ with st.sidebar:
 
     if theme_choice != st.session_state.theme:
         st.session_state.theme = theme_choice
+
+        if st.session_state.user:
+            try:
+                db.execute_query(
+                    "UPDATE users SET theme_prefere = ? WHERE id = ?",
+                    (theme_choice, st.session_state.user["id"])
+                )
+                st.session_state.user["theme_prefere"] = theme_choice
+            except Exception:
+                pass
+
         st.rerun()
 
 
