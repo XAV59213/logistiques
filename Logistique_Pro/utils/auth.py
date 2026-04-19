@@ -1,7 +1,9 @@
-import streamlit as st
+# utils/auth.py
 import bcrypt
+import streamlit as st
+
 from config import Config
-from utils.database import get_connection, init_db
+from utils.database import get_connection, init_database
 
 
 def hash_password(password: str) -> str:
@@ -15,8 +17,8 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 
-def ensure_default_admin():
-    init_db()
+def ensure_default_admin() -> None:
+    init_database()
     conn = get_connection()
     cur = conn.cursor()
 
@@ -27,16 +29,16 @@ def ensure_default_admin():
         cur.execute(
             """
             INSERT INTO users (
-                email, password, role, first_name, last_name, is_active
+                username, email, password_hash, role, categorie, status
             ) VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
+                "Administrateur",
                 Config.DEFAULT_ADMIN_EMAIL,
                 hash_password(Config.DEFAULT_ADMIN_PASSWORD),
-                "Admin",
-                "Admin",
-                "Principal",
-                1,
+                "admin",
+                "Administration",
+                "validated",
             ),
         )
         conn.commit()
@@ -70,11 +72,12 @@ def login_page():
 
         cur.execute(
             """
-            SELECT id, email, password, role, first_name, last_name, is_active
+            SELECT id, username, email, password_hash, role, categorie, status,
+                   photo_profil, logo_perso, telephone
             FROM users
             WHERE email = ?
             """,
-            (email,),
+            (email.strip().lower(),),
         )
         row = cur.fetchone()
         conn.close()
@@ -83,19 +86,23 @@ def login_page():
             st.error("Utilisateur introuvable.")
             return
 
-        if row["is_active"] != 1:
-            st.error("Compte désactivé.")
+        if row["status"] != "validated":
+            st.error("Compte non validé.")
             return
 
-        if verify_password(password, row["password"]):
+        if verify_password(password, row["password_hash"]):
             st.session_state["user"] = {
                 "id": row["id"],
+                "username": row["username"],
                 "email": row["email"],
                 "role": row["role"],
-                "first_name": row["first_name"],
-                "last_name": row["last_name"],
+                "categorie": row["categorie"],
+                "status": row["status"],
+                "photo_profil": row["photo_profil"],
+                "logo_perso": row["logo_perso"],
+                "telephone": row["telephone"],
             }
-            st.success("Connexion réussie")
+            st.success("Connexion réussie.")
             st.rerun()
         else:
             st.error("Identifiants invalides.")
