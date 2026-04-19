@@ -53,6 +53,24 @@ def execute_query(query: str, params: tuple[Any, ...] = ()) -> None:
         conn.close()
 
 
+def get_setting(key: str, default: str = "") -> str:
+    row = fetch_one("SELECT value FROM settings WHERE key = ?", (key,))
+    if not row:
+        return default
+    return row["value"] if row["value"] is not None else default
+
+
+def set_setting(key: str, value: str) -> None:
+    execute_query(
+        """
+        INSERT INTO settings (key, value)
+        VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        """,
+        (key, value),
+    )
+
+
 def _column_exists(cursor: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
     cursor.execute(f"PRAGMA table_info({table_name})")
     columns = cursor.fetchall()
@@ -958,12 +976,10 @@ def get_demande_by_id(demande_id: int) -> Optional[sqlite3.Row]:
 
 def can_apply_demande_stock(demande_id: int) -> bool:
     row = fetch_one(
-        "SELECT statut, stock_applied FROM demandes WHERE id = ?",
+        "SELECT stock_applied FROM demandes WHERE id = ?",
         (int(demande_id),),
     )
     if not row:
-        return False
-    if row["statut"] == "Validée" and int(row["stock_applied"] or 0) == 1:
         return False
     return int(row["stock_applied"] or 0) == 0
 
