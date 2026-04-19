@@ -271,10 +271,7 @@ else:
             load_page("pages.10_Administration_Systeme")
 
         elif selected == "Exports & Backups" and user_role == "admin":
-            try:
-                importlib.import_module("pages.19_Exports_Backups")
-            except Exception as e:
-                st.error(f"Erreur lors du chargement de la page Exports & Backups : {e}")
+            load_page("pages.19_Exports_Backups")
 
         else:
             st.info("🚧 Page en cours de développement...")
