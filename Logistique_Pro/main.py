@@ -11,22 +11,21 @@ import utils.style as style
 from config import DEFAULT_CONFIG
 
 
+db.init_database()
+VISUAL_SETTINGS = style.get_visual_settings()
+
 st.set_page_config(
-    page_title=DEFAULT_CONFIG["site_title"],
+    page_title=VISUAL_SETTINGS["site_title"],
     page_icon="🚛",
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-db.init_database()
 
 if "user" not in st.session_state:
     st.session_state.user = None
 
 if "theme" not in st.session_state:
     st.session_state.theme = DEFAULT_CONFIG["default_theme"]
-
-style.apply_global_style()
 
 
 def load_page(module_name: str) -> None:
@@ -140,14 +139,13 @@ Merci de votre patience.
         logout()
 
 
-# Recharge le thème utilisateur si connecté
 if st.session_state.user:
     st.session_state.theme = st.session_state.user.get(
         "theme_prefere",
-        DEFAULT_CONFIG["default_theme"]
+        DEFAULT_CONFIG["default_theme"],
     )
 
-# Réapplique le style après mise à jour éventuelle du thème
+CURRENT_VISUAL = style.get_visual_settings()
 style.apply_global_style()
 
 with st.sidebar:
@@ -158,15 +156,15 @@ with st.sidebar:
     else:
         st.markdown(
             f"""
-            <h2 style="color:{DEFAULT_CONFIG['primary_color']}; text-align:center; margin-bottom:0;">
-                🚛 Logistique Pro
+            <h2 style="color:{CURRENT_VISUAL['primary_color']}; text-align:center; margin-bottom:0;">
+                🚛 {CURRENT_VISUAL['site_title']}
             </h2>
             """,
             unsafe_allow_html=True,
         )
 
-    st.markdown("**Ville de Marly**")
-    st.caption("Service Logistique & Événements")
+    st.markdown(f"**{CURRENT_VISUAL['site_title']}**")
+    st.caption(CURRENT_VISUAL["site_subtitle"])
 
     if st.session_state.user:
         username = st.session_state.user.get("username", "Utilisateur")
@@ -199,7 +197,7 @@ with st.sidebar:
                 "border-radius": "8px",
             },
             "nav-link-selected": {
-                "background-color": DEFAULT_CONFIG["primary_color"],
+                "background-color": CURRENT_VISUAL["primary_color"],
                 "color": "white",
             },
         },
@@ -227,7 +225,7 @@ with st.sidebar:
             try:
                 db.execute_query(
                     "UPDATE users SET theme_prefere = ? WHERE id = ?",
-                    (theme_choice, st.session_state.user["id"])
+                    (theme_choice, st.session_state.user["id"]),
                 )
                 st.session_state.user["theme_prefere"] = theme_choice
             except Exception:
