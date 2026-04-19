@@ -1,120 +1,182 @@
 # utils/style.py
-import streamlit as st
-from config import DEFAULT_CONFIG
 from typing import Dict
 
+import streamlit as st
+
+import utils.database as db
+from config import DEFAULT_CONFIG
+
+
+def get_visual_settings() -> Dict[str, str]:
+    def _safe_setting(key: str, default: str) -> str:
+        try:
+            value = db.get_setting(key, default)
+            return value if value else default
+        except Exception:
+            return default
+
+    return {
+        "site_title": _safe_setting("site_title", DEFAULT_CONFIG["site_title"]),
+        "site_subtitle": _safe_setting("site_subtitle", DEFAULT_CONFIG["site_subtitle"]),
+        "primary_color": _safe_setting("primary_color", DEFAULT_CONFIG["primary_color"]),
+        "secondary_color": _safe_setting("secondary_color", DEFAULT_CONFIG["secondary_color"]),
+        "accent_color": _safe_setting("accent_color", DEFAULT_CONFIG["accent_color"]),
+    }
+
+
 def apply_global_style() -> None:
-    """Applique le style CSS global professionnel avec support des 3 thèmes."""
-    
-    # Récupération du thème choisi par l'utilisateur (stocké dans session_state)
     current_theme = st.session_state.get("theme", DEFAULT_CONFIG["default_theme"])
-    
-    # Définition des palettes de couleurs
-    themes: Dict[str, Dict[str, str]] = {
+    visual = get_visual_settings()
+
+    theme_presets: Dict[str, Dict[str, str]] = {
         "Municipal Bleu": {
-            "primary": "#003366",
-            "secondary": "#f8f9fa",
-            "accent": "#ffc107",
-            "text": "#ffffff",
-            "background": "#f8f9fa",
+            "background": visual["secondary_color"],
             "card_bg": "#ffffff",
+            "sidebar_bg": "#f8fbff",
+            "text": "#1f2937",
+            "muted_text": "#6b7280",
+            "border": "#dbe3ec",
+            "button_text": "#ffffff",
         },
         "Mode Clair": {
-            "primary": "#1a73e8",
-            "secondary": "#f8f9fa",
-            "accent": "#34a853",
-            "text": "#202124",
             "background": "#ffffff",
             "card_bg": "#f8f9fa",
+            "sidebar_bg": "#f7f8fa",
+            "text": "#202124",
+            "muted_text": "#5f6368",
+            "border": "#dadce0",
+            "button_text": "#ffffff",
         },
         "Mode Sombre": {
-            "primary": "#8ab4f8",
-            "secondary": "#2d2d2d",
-            "accent": "#fbbc05",
-            "text": "#e8eaed",
             "background": "#1f1f1f",
             "card_bg": "#2d2d2d",
-        }
+            "sidebar_bg": "#202124",
+            "text": "#e8eaed",
+            "muted_text": "#9aa0a6",
+            "border": "#3c4043",
+            "button_text": "#ffffff",
+        },
     }
-    
-    theme = themes.get(current_theme, themes["Municipal Bleu"])
-    
+
+    theme = theme_presets.get(current_theme, theme_presets["Municipal Bleu"])
+
     css = f"""
     <style>
-        /* ====================== STYLE GLOBAL ====================== */
-        .main {{
-            background-color: {theme['background']};
-            color: {theme['text']};
+        :root {{
+            --primary-color: {visual["primary_color"]};
+            --secondary-color: {visual["secondary_color"]};
+            --accent-color: {visual["accent_color"]};
+            --bg-color: {theme["background"]};
+            --card-bg: {theme["card_bg"]};
+            --sidebar-bg: {theme["sidebar_bg"]};
+            --text-color: {theme["text"]};
+            --muted-text: {theme["muted_text"]};
+            --border-color: {theme["border"]};
+            --button-text: {theme["button_text"]};
         }}
-        
-        /* Titres */
+
+        html, body, [data-testid="stAppViewContainer"], .main {{
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }}
+
+        .main .block-container {{
+            padding-top: 1.2rem;
+            padding-bottom: 1rem;
+        }}
+
         h1, h2, h3, h4, h5, h6 {{
-            color: {theme['primary']};
+            color: var(--primary-color);
+            font-weight: 700;
+        }}
+
+        p, span, label, div {{
+            color: inherit;
+        }}
+
+        section[data-testid="stSidebar"] {{
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+        }}
+
+        div[data-testid="metric-container"] {{
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }}
+
+        .stButton > button,
+        .stDownloadButton > button {{
+            background: var(--primary-color);
+            color: var(--button-text);
+            border: none;
+            border-radius: 10px;
+            padding: 0.55rem 1rem;
             font-weight: 600;
         }}
-        
-        /* Sidebar */
-        .css-1d391kg, .stSidebar {{
-            background-color: {theme['card_bg']};
+
+        .stButton > button:hover,
+        .stDownloadButton > button:hover {{
+            filter: brightness(0.95);
         }}
-        
-        /* Boutons principaux */
-        .stButton>button {{
-            background-color: {theme['primary']};
-            color: white;
-            border-radius: 8px;
-            font-weight: 500;
-            border: none;
-            transition: all 0.3s ease;
+
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="input"] > div,
+        textarea,
+        input {{
+            border-radius: 10px !important;
         }}
-        
-        .stButton>button:hover {{
-            background-color: #002244;
-            box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
-        }}
-        
-        /* Cards */
-        .stCard, div[data-testid="stExpander"] > div {{
-            background-color: {theme['card_bg']};
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
-        }}
-        
-        /* Notifications */
+
         .notification-card {{
-            background-color: #fff8e1;
-            border-left: 5px solid {theme['accent']};
+            background-color: var(--card-bg);
+            border-left: 5px solid var(--accent-color);
             padding: 16px;
             border-radius: 10px;
             margin-bottom: 12px;
         }}
-        
-        /* Stock colors */
-        .stock-ok {{ color: #34a853; font-weight: 600; }}
-        .stock-low {{ color: #f57c00; font-weight: 600; }}
-        .stock-critical {{ color: #d32f2f; font-weight: 700; }}
-        
-        /* Footer */
+
+        .stock-ok {{
+            color: #34a853;
+            font-weight: 600;
+        }}
+
+        .stock-low {{
+            color: #f57c00;
+            font-weight: 600;
+        }}
+
+        .stock-critical {{
+            color: #d32f2f;
+            font-weight: 700;
+        }}
+
         .custom-footer {{
             text-align: center;
-            color: #6c757d;
+            color: var(--muted-text);
             font-size: 0.85rem;
             padding: 20px 0;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid var(--border-color);
             margin-top: 40px;
         }}
-        
-        /* Amélioration générale */
-        .stAlert {{ border-radius: 10px; }}
+
+        .stAlert {{
+            border-radius: 10px;
+        }}
+
+        hr {{
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 1rem 0;
+        }}
     </style>
     """
-    
+
     st.markdown(css, unsafe_allow_html=True)
 
 
 def set_theme(theme_name: str) -> None:
-    """Change le thème de l'utilisateur et le sauvegarde dans session_state."""
     if theme_name in ["Municipal Bleu", "Mode Clair", "Mode Sombre"]:
         st.session_state.theme = theme_name
         st.rerun()
