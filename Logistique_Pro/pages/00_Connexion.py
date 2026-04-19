@@ -7,15 +7,15 @@ def show() -> None:
     st.title("🔑 Connexion")
     st.caption("Accédez à Logistique Pro - Ville de Marly")
 
-    with st.form("login_form"):
-        email = st.text_input("Email")
+    with st.form("login_form", clear_on_submit=False):
+        email = st.text_input("Email").strip().lower()
         password = st.text_input("Mot de passe", type="password")
 
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            submitted = st.form_submit_button("Se connecter", type="primary", use_container_width=True)
-        with col2:
-            st.form_submit_button("Créer un compte", use_container_width=True)
+        submitted = st.form_submit_button(
+            "Se connecter",
+            type="primary",
+            use_container_width=True
+        )
 
         if submitted:
             if not email or not password:
@@ -25,15 +25,14 @@ def show() -> None:
 
                 if user:
                     st.session_state.user = user
-                    st.success(f"✅ Connexion réussie ! Bienvenue {user['username']}.")
+                    st.session_state.theme = user.get("theme_prefere", "Municipal Bleu")
+                    st.success(f"✅ Connexion réussie. Bienvenue {user['username']}.")
                     st.rerun()
                 else:
                     st.error("❌ Email ou mot de passe incorrect.")
 
     st.markdown("---")
-    st.markdown("Pas encore de compte ?")
-    if st.button("Créer un nouveau compte"):
-        st.session_state["goto_page"] = "create_account"
-        st.info("Retournez au menu latéral puis cliquez sur « Créer un compte ».")
+    st.markdown("**Pas encore de compte ?**")
+    st.info("Utilisez le menu latéral puis cliquez sur « Créer un compte ».")
 
     st.caption("© 2026 Ville de Marly - Développé par xavier59213")
