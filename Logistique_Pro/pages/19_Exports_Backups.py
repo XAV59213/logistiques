@@ -1,6 +1,7 @@
-import shutil
+# pages/19_Exports_Backups.py
 from datetime import datetime
 from pathlib import Path
+import shutil
 
 import pandas as pd
 import streamlit as st
@@ -15,6 +16,11 @@ page_header(
     "assets/icons/settings.png"
 )
 
+user = st.session_state.get("user")
+if not user or user.get("role") != "admin":
+    st.error("Accès réservé aux administrateurs.")
+    st.stop()
+
 backup_dir = Path("data/backups")
 backup_dir.mkdir(parents=True, exist_ok=True)
 
@@ -22,43 +28,55 @@ conn = get_connection()
 
 st.subheader("Exports CSV")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("Exporter les utilisateurs", use_container_width=True):
-        try:
-            df_users = pd.read_sql_query("SELECT * FROM users ORDER BY id DESC", conn)
-            if df_users.empty:
-                st.warning("Aucun utilisateur à exporter.")
-            else:
-                csv_data = df_users.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Télécharger users.csv",
-                    data=csv_data,
-                    file_name="users.csv",
-                    mime="text/csv",
-                    use_container_width=True,
-                )
-        except Exception as e:
-            st.error(f"Erreur export utilisateurs : {e}")
+    try:
+        df_users = pd.read_sql_query("SELECT * FROM users ORDER BY id DESC", conn)
+        if df_users.empty:
+            st.warning("Aucun utilisateur à exporter.")
+        else:
+            st.download_button(
+                "Télécharger users.csv",
+                data=df_users.to_csv(index=False).encode("utf-8"),
+                file_name="users.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+    except Exception as e:
+        st.error(f"Erreur export utilisateurs : {e}")
 
 with col2:
-    if st.button("Exporter le stock", use_container_width=True):
-        try:
-            df_stock = pd.read_sql_query("SELECT * FROM stock_items ORDER BY id DESC", conn)
-            if df_stock.empty:
-                st.warning("Aucun article à exporter.")
-            else:
-                csv_data = df_stock.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Télécharger stock_items.csv",
-                    data=csv_data,
-                    file_name="stock_items.csv",
-                    mime="text/csv",
-                    use_container_width=True,
-                )
-        except Exception as e:
-            st.error(f"Erreur export stock : {e}")
+    try:
+        df_articles = pd.read_sql_query("SELECT * FROM articles ORDER BY id DESC", conn)
+        if df_articles.empty:
+            st.warning("Aucun article à exporter.")
+        else:
+            st.download_button(
+                "Télécharger articles.csv",
+                data=df_articles.to_csv(index=False).encode("utf-8"),
+                file_name="articles.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+    except Exception as e:
+        st.error(f"Erreur export articles : {e}")
+
+with col3:
+    try:
+        df_stock = pd.read_sql_query("SELECT * FROM stock_items ORDER BY id DESC", conn)
+        if df_stock.empty:
+            st.warning("Aucun stock à exporter.")
+        else:
+            st.download_button(
+                "Télécharger stock_items.csv",
+                data=df_stock.to_csv(index=False).encode("utf-8"),
+                file_name="stock_items.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+    except Exception as e:
+        st.error(f"Erreur export stock : {e}")
 
 st.divider()
 st.subheader("Sauvegarde base de données")
@@ -94,7 +112,7 @@ else:
                 with open(backup_file, "rb") as f:
                     st.download_button(
                         "Télécharger",
-                        data=f,
+                        data=f.read(),
                         file_name=backup_file.name,
                         mime="application/octet-stream",
                         key=f"dl_{backup_file.name}",
