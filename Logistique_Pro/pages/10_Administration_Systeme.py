@@ -1,125 +1,109 @@
-# pages/08_Planning_Equipes.py
+# pages/10_Administration_Systeme.py
 """
-Page Planning Équipes
-Vue simple du planning des interventions pour les équipes internes.
+Page Administration Système
+Paramètres techniques, état de la base, dossiers et sauvegardes.
 """
 
-from datetime import datetime
-import pandas as pd
+from pathlib import Path
 import streamlit as st
+
+from config import Config
+from utils.database import get_connection
+from utils.backups import create_backup, list_backups
+from utils.system_manager import ensure_directories, maintenance_status
 
 
 def show() -> None:
-    st.title("📅 Planning Équipes")
-    st.caption("Organisation des interventions et suivi opérationnel")
+    st.title("🛠️ Administration Système")
+    st.caption("Gestion technique de l'application")
 
     user = st.session_state.user
-    if not user:
-        st.error("Vous devez être connecté.")
+    if not user or user.get("role") != "admin":
+        st.error("Accès réservé aux administrateurs.")
         st.stop()
 
-    role = user.get("role")
-    if role not in ["admin", "interne", "equipe_interne"]:
-        st.error("Accès réservé aux équipes internes et administrateurs.")
-        st.stop()
+    st.subheader("📁 Vérification des dossiers")
+    if st.button("Vérifier / créer les dossiers nécessaires", use_container_width=True):
+        ensure_directories()
+        st.success("Les dossiers requis sont présents.")
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        equipe = st.selectbox(
-            "Équipe",
-            ["Toutes", "Équipe Alpha", "Équipe Beta", "Équipe Technique", "Équipe Logistique"]
-        )
-    with col2:
-        periode = st.selectbox(
-            "Période",
-            ["Aujourd'hui", "Cette semaine", "Ce mois"]
-        )
-    with col3:
-        statut = st.selectbox(
-            "Statut",
-            ["Tous", "Planifiée", "En cours", "Terminée"]
-        )
+    st.subheader("🗄️ État de la base de données")
+    db_path = Path(Config.DB_PATH)
 
-    planning_data = [
-        {
-            "Date": "21/04/2026",
-            "Heure": "08:00",
-            "Équipe": "Équipe Alpha",
-            "Mission": "Montage barnum",
-            "Lieu": "Salle des Fêtes",
-            "Véhicule": "Renault Master",
-            "Statut": "Planifiée",
-        },
-        {
-            "Date": "21/04/2026",
-            "Heure": "13:30",
-            "Équipe": "Équipe Beta",
-            "Mission": "Livraison chaises et tables",
-            "Lieu": "Parc communal",
-            "Véhicule": "Peugeot Boxer",
-            "Statut": "En cours",
-        },
-        {
-            "Date": "22/04/2026",
-            "Heure": "09:00",
-            "Équipe": "Équipe Technique",
-            "Mission": "Installation sonorisation",
-            "Lieu": "Place de l'Église",
-            "Véhicule": "Citroën Jumper",
-            "Statut": "Planifiée",
-        },
-        {
-            "Date": "23/04/2026",
-            "Heure": "14:00",
-            "Équipe": "Équipe Logistique",
-            "Mission": "Contrôle inventaire",
-            "Lieu": "Entrepôt A",
-            "Véhicule": "Aucun",
-            "Statut": "Terminée",
-        },
-    ]
+    if db_path.exists():
+        st.success(f"Base détectée : {db_path.name}")
+        st.caption(f"Chemin : {db_path}")
+        st.caption(f"Taille : {db_path.stat().st_size} octets")
+    else:
+        st.error("Base de données introuvable.")
 
-    df = pd.DataFrame(planning_data)
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
 
-    if equipe != "Toutes":
-        df = df[df["Équipe"] == equipe]
+        cur.execute("SELECT COUNT(*) FROM users")
+        total_users = cur.fetchone()[0]
 
-    if statut != "Tous":
-        df = df[df["Statut"] == statut]
+        cur.execute("SELECT COUNT(*) FROM articles")
+        total_articles = cur.fetchone()[0]
 
-    st.subheader("📋 Planning des interventions")
-    st.dataframe(df, use_container_width=True, hide_index=True)
+        cur.execute("SELECT COUNT(*) FROM notifications")
+        total_notifications = cur.fetchone()[0]
 
-    st.subheader("⚡ Actions rapides")
-    col_a, col_b, col_c = st.columns(3)
+        cur.execute("SELECT COUNT(*) FROM stock_items")
+        total_stock_items = cur.fetchone()[0]
 
-    with col_a:
-        if st.button("➕ Ajouter une intervention", use_container_width=True):
-            st.success("Formulaire d'ajout d'intervention à connecter à la base de données.")
+        conn.close()
 
-    with col_b:
-        if st.button("✅ Marquer une mission terminée", use_container_width=True):
-            st.success("Action de clôture à relier au planning réel.")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.metric("Utilisateurs", total_users)
+        with c2:
+            st.metric("Articles", total_articles)
+        with c3:
+            st.metric("Notifications", total_notifications)
+        with c4:
+            st.metric("Stock QR", total_stock_items)
 
-    with col_c:
-        if st.button("📤 Exporter le planning", use_container_width=True):
-            csv_data = df.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "Télécharger planning_equipes.csv",
-                data=csv_data,
-                file_name="planning_equipes.csv",
-                mime="text/csv",
-                use_container_width=True,
-                key="download_planning_equipes",
-            )
+    except Exception as e:
+        st.error(f"Erreur lors de la lecture des statistiques système : {e}")
 
-    st.subheader("📌 Résumé")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Missions affichées", len(df))
-    with c2:
-        st.metric("En cours", len(df[df["Statut"] == "En cours"]))
-    with c3:
-        st.metric("Planifiées", len(df[df["Statut"] == "Planifiée"]))
+    st.subheader("🚧 Maintenance")
+    status = maintenance_status()
+    if status["enabled"]:
+        st.warning(f"Maintenance active : {status['message']}")
+    else:
+        st.success("Mode maintenance désactivé.")
+
+    st.info("Le mode maintenance est piloté par les variables d'environnement du fichier .env.")
+
+    st.subheader("💾 Sauvegardes")
+    if st.button("Créer une sauvegarde SQLite", type="primary", use_container_width=True):
+        success, message = create_backup()
+        if success:
+            st.success(f"Sauvegarde créée : {Path(message).name}")
+        else:
+            st.error(message)
+
+    backups = list_backups()
+    if not backups:
+        st.info("Aucune sauvegarde disponible.")
+    else:
+        for backup_file in backups:
+            with st.container(border=True):
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    st.write(f"**{backup_file.name}**")
+                    st.caption(f"Taille : {backup_file.stat().st_size} octets")
+                with col2:
+                    with open(backup_file, "rb") as f:
+                        st.download_button(
+                            "Télécharger",
+                            data=f.read(),
+                            file_name=backup_file.name,
+                            mime="application/octet-stream",
+                            key=f"download_backup_{backup_file.name}",
+                            use_container_width=True,
+                        )
 
     st.caption("© 2026 Ville de Marly - Développé par xavier59213")
