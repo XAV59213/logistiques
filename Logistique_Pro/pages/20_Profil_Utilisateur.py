@@ -1,5 +1,6 @@
-import streamlit as st
+# pages/20_Profil_Utilisateur.py
 import bcrypt
+import streamlit as st
 
 from utils.helpers import page_header
 from utils.auth import get_current_user
@@ -22,7 +23,7 @@ cur = conn.cursor()
 
 cur.execute(
     """
-    SELECT id, email, role, first_name, last_name, phone
+    SELECT id, username, email, role, categorie, telephone
     FROM users
     WHERE id = ?
     """,
@@ -38,31 +39,36 @@ if not row:
 st.subheader("Informations du compte")
 
 with st.form("profile_form"):
+    username = st.text_input("Nom d'utilisateur", value=row["username"] or "")
     email = st.text_input("Email", value=row["email"], disabled=True)
     role = st.text_input("Rôle", value=row["role"], disabled=True)
-    first_name = st.text_input("Prénom", value=row["first_name"] or "")
-    last_name = st.text_input("Nom", value=row["last_name"] or "")
-    phone = st.text_input("Téléphone", value=row["phone"] or "")
+    categorie = st.text_input("Catégorie", value=row["categorie"] or "", disabled=True)
+    phone = st.text_input("Téléphone", value=row["telephone"] or "")
 
     submitted = st.form_submit_button("Enregistrer les modifications")
 
     if submitted:
-        cur.execute(
-            """
-            UPDATE users
-            SET first_name = ?, last_name = ?, phone = ?
-            WHERE id = ?
-            """,
-            (first_name.strip(), last_name.strip(), phone.strip(), row["id"])
-        )
-        conn.commit()
+        if not username.strip():
+            st.error("Le nom d'utilisateur est obligatoire.")
+        else:
+            try:
+                cur.execute(
+                    """
+                    UPDATE users
+                    SET username = ?, telephone = ?
+                    WHERE id = ?
+                    """,
+                    (username.strip(), phone.strip(), row["id"])
+                )
+                conn.commit()
 
-        # Mise à jour session
-        st.session_state["user"]["first_name"] = first_name.strip()
-        st.session_state["user"]["last_name"] = last_name.strip()
+                st.session_state["user"]["username"] = username.strip()
+                st.session_state["user"]["telephone"] = phone.strip()
 
-        st.success("Profil mis à jour.")
-        st.rerun()
+                st.success("Profil mis à jour.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur lors de la mise à jour du profil : {e}")
 
 st.divider()
 st.subheader("Changer le mot de passe")
@@ -81,12 +87,15 @@ with st.form("password_form"):
         elif new_password != confirm_password:
             st.error("Les mots de passe ne correspondent pas.")
         else:
-            hashed = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+            hashed = bcrypt.hashpw(
+                new_password.encode("utf-8"),
+                bcrypt.gensalt()
+            ).decode("utf-8")
 
             cur.execute(
                 """
                 UPDATE users
-                SET password = ?
+                SET password_hash = ?
                 WHERE id = ?
                 """,
                 (hashed, row["id"])
