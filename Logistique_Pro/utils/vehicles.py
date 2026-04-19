@@ -1,14 +1,14 @@
 from utils.database import get_connection
 
 
-def add_vehicle(registration, brand, model):
+def add_vehicle(immatriculation, modele, vehicle_type):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT INTO vehicles (registration, brand, model)
+        INSERT INTO vehicules (immatriculation, modele, type)
         VALUES (?, ?, ?)
-    """, (registration, brand, model))
+    """, (immatriculation, modele, vehicle_type))
 
     conn.commit()
     conn.close()
@@ -18,7 +18,7 @@ def list_vehicles():
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM vehicles ORDER BY registration")
+    cur.execute("SELECT * FROM vehicules ORDER BY immatriculation")
     rows = cur.fetchall()
 
     conn.close()
