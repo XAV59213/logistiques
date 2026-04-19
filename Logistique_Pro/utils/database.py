@@ -260,6 +260,7 @@ def init_database() -> None:
             statut TEXT NOT NULL DEFAULT 'En attente',
             montant_estime REAL DEFAULT 0.0,
             commentaire_admin TEXT,
+            stock_applied INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
@@ -345,6 +346,7 @@ def _add_missing_columns() -> None:
             "commentaire_admin": "TEXT",
             "updated_at": "TIMESTAMP",
             "montant_estime": "REAL DEFAULT 0.0",
+            "stock_applied": "INTEGER DEFAULT 0",
         }
         for column_name, column_type in demandes_columns.items():
             if not _column_exists(cursor, "demandes", column_name):
@@ -366,7 +368,6 @@ def insert_demo_data() -> None:
         conn.close()
         return
 
-    # ==================== ADMIN DEMO ====================
     admin_email = "admin@marly.fr"
     admin_row = cursor.execute(
         "SELECT id FROM users WHERE email = ?",
@@ -391,7 +392,6 @@ def insert_demo_data() -> None:
     else:
         admin_id = int(admin_row["id"])
 
-    # ==================== FOURNISSEURS DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM fournisseurs").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO fournisseurs (nom, contact_email, telephone, adresse, notes)
@@ -401,7 +401,6 @@ def insert_demo_data() -> None:
             ("Tech Sono Grand Est", "contact@techsono.fr", "03 87 22 22 22", "Nancy", "Sonorisation et technique"),
         ])
 
-    # ==================== ARTICLES DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM articles").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO articles (
@@ -416,7 +415,6 @@ def insert_demo_data() -> None:
             ("Mange-debout hautes", "Mobilier", "Tables hautes", 42, 8, 45.00, "Mange-debout pour réceptions", "Bon", 1),
         ])
 
-    # ==================== OUTILS DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM outils").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO outils (
@@ -428,7 +426,6 @@ def insert_demo_data() -> None:
             ("Câbles 50m", "OUT-002", "Électricité", 15, 5, "Entrepôt C", "Bon", "Câbles rallonge 50m", 1),
         ])
 
-    # ==================== VEHICULES DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM vehicules").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO vehicules (
@@ -440,7 +437,6 @@ def insert_demo_data() -> None:
             ("EE-789-FF", "Citroën Jumper", "Utilitaire", 1500, "Maintenance", 91320),
         ])
 
-    # ==================== BUILDINGS DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM buildings").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO buildings (name, category, address, capacity, safety_notes)
@@ -450,7 +446,6 @@ def insert_demo_data() -> None:
             ("Gymnase Municipal", "Gymnase", "Rue du Stade", 500, "Vérifier issues de secours"),
         ])
 
-    # ==================== STOCK ITEMS DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM stock_items").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO stock_items (
@@ -462,7 +457,6 @@ def insert_demo_data() -> None:
             ("Projecteurs LED", "Technique", 10, "pcs", 3, "Entrepôt B", "Contrôlés en mars"),
         ])
 
-    # ==================== EVENEMENTS DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM evenements").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO evenements (titre, description, date_debut, date_fin, lieu, type)
@@ -472,7 +466,6 @@ def insert_demo_data() -> None:
             ("Concert Place de l'Église", "Installation technique et logistique", "2026-05-03 18:00", "2026-05-03 23:30", "Place de l'Église", "Concert"),
         ])
 
-    # ==================== NOTIFICATIONS DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM notifications").fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO notifications (title, message, level, is_read)
@@ -483,7 +476,6 @@ def insert_demo_data() -> None:
             ("Stock bas", "Barrières Vauban bientôt sous le seuil minimum", "warning", 0),
         ])
 
-    # ==================== MESSAGES DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 0:
         cursor.execute("""
             INSERT INTO messages (sender_id, recipient_id, subject, body, is_read)
@@ -496,12 +488,12 @@ def insert_demo_data() -> None:
             0,
         ))
 
-    # ==================== DEMANDES DEMO ====================
     if cursor.execute("SELECT COUNT(*) FROM demandes").fetchone()[0] == 0:
         cursor.execute("""
             INSERT INTO demandes (
-                user_id, titre, motif, date_evenement, lieu, statut, montant_estime, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                user_id, titre, motif, date_evenement, lieu, statut, montant_estime,
+                commentaire_admin, stock_applied, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         """, (
             admin_id,
             "Fête de printemps",
@@ -510,6 +502,8 @@ def insert_demo_data() -> None:
             "Parc communal",
             "Validée",
             1245.00,
+            "Demande de démonstration validée.",
+            0,
         ))
         demande_id = int(cursor.lastrowid)
 
@@ -829,8 +823,9 @@ def create_demande(
 
         cursor.execute("""
             INSERT INTO demandes (
-                user_id, titre, motif, date_evenement, lieu, statut, montant_estime, updated_at
-            ) VALUES (?, ?, ?, ?, ?, 'En attente', ?, CURRENT_TIMESTAMP)
+                user_id, titre, motif, date_evenement, lieu, statut,
+                montant_estime, commentaire_admin, stock_applied, updated_at
+            ) VALUES (?, ?, ?, ?, ?, 'En attente', ?, '', 0, CURRENT_TIMESTAMP)
         """, (
             int(user_id),
             titre.strip(),
@@ -872,6 +867,7 @@ def get_demandes_by_user(user_id: int) -> list[sqlite3.Row]:
             d.statut,
             d.montant_estime,
             d.commentaire_admin,
+            d.stock_applied,
             d.created_at,
             d.updated_at
         FROM demandes d
@@ -923,6 +919,7 @@ def get_all_demandes() -> list[sqlite3.Row]:
             d.statut,
             d.montant_estime,
             d.commentaire_admin,
+            d.stock_applied,
             d.created_at,
             d.updated_at
         FROM demandes d
@@ -951,11 +948,73 @@ def get_demande_by_id(demande_id: int) -> Optional[sqlite3.Row]:
             d.statut,
             d.montant_estime,
             d.commentaire_admin,
+            d.stock_applied,
             d.created_at,
             d.updated_at
         FROM demandes d
         WHERE d.id = ?
     """, (int(demande_id),))
+
+
+def can_apply_demande_stock(demande_id: int) -> bool:
+    row = fetch_one(
+        "SELECT statut, stock_applied FROM demandes WHERE id = ?",
+        (int(demande_id),),
+    )
+    if not row:
+        return False
+    if row["statut"] == "Validée" and int(row["stock_applied"] or 0) == 1:
+        return False
+    return int(row["stock_applied"] or 0) == 0
+
+
+def apply_demande_stock(demande_id: int) -> None:
+    if not can_apply_demande_stock(int(demande_id)):
+        return
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+
+        lignes = cursor.execute(
+            """
+            SELECT article_id, quantite_demandee
+            FROM demande_lignes
+            WHERE demande_id = ?
+              AND article_id IS NOT NULL
+            """,
+            (int(demande_id),),
+        ).fetchall()
+
+        for ligne in lignes:
+            article_id = ligne["article_id"]
+            quantite = int(ligne["quantite_demandee"] or 0)
+
+            cursor.execute(
+                """
+                UPDATE articles
+                SET quantite_stock = CASE
+                    WHEN quantite_stock - ? < 0 THEN 0
+                    ELSE quantite_stock - ?
+                END
+                WHERE id = ?
+                """,
+                (quantite, quantite, int(article_id)),
+            )
+
+        cursor.execute(
+            """
+            UPDATE demandes
+            SET stock_applied = 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (int(demande_id),),
+        )
+
+        conn.commit()
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
