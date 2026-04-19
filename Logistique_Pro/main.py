@@ -8,14 +8,15 @@ from streamlit_option_menu import option_menu
 
 import utils.database as db
 import utils.style as style
-from config import DEFAULT_CONFIG
+from config import DEFAULT_CONFIG, get_runtime_config
 
 
+# ====================== INITIALISATION ======================
 db.init_database()
-VISUAL_SETTINGS = style.get_visual_settings()
+APP_CONFIG = get_runtime_config()
 
 st.set_page_config(
-    page_title=VISUAL_SETTINGS["site_title"],
+    page_title=APP_CONFIG["site_title"],
     page_icon="🚛",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -25,9 +26,10 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 if "theme" not in st.session_state:
-    st.session_state.theme = DEFAULT_CONFIG["default_theme"]
+    st.session_state.theme = APP_CONFIG.get("default_theme", DEFAULT_CONFIG["default_theme"])
 
 
+# ====================== HELPERS ======================
 def load_page(module_name: str) -> None:
     try:
         module = importlib.import_module(module_name)
@@ -43,7 +45,7 @@ def load_page(module_name: str) -> None:
 
 def logout() -> None:
     st.session_state.user = None
-    st.session_state.theme = DEFAULT_CONFIG["default_theme"]
+    st.session_state.theme = APP_CONFIG.get("default_theme", DEFAULT_CONFIG["default_theme"])
     st.rerun()
 
 
@@ -139,15 +141,21 @@ Merci de votre patience.
         logout()
 
 
+# ====================== THÈME UTILISATEUR ======================
 if st.session_state.user:
     st.session_state.theme = st.session_state.user.get(
         "theme_prefere",
-        DEFAULT_CONFIG["default_theme"],
+        APP_CONFIG.get("default_theme", DEFAULT_CONFIG["default_theme"]),
     )
 
-CURRENT_VISUAL = style.get_visual_settings()
+# Recharge la config runtime après éventuelles modifs admin
+APP_CONFIG = get_runtime_config()
+
+# Applique le style global (qui lit aussi les settings visuels en base)
 style.apply_global_style()
 
+
+# ====================== SIDEBAR ======================
 with st.sidebar:
     logo_path = Path("assets/logo/logo.png")
 
@@ -156,15 +164,15 @@ with st.sidebar:
     else:
         st.markdown(
             f"""
-            <h2 style="color:{CURRENT_VISUAL['primary_color']}; text-align:center; margin-bottom:0;">
-                🚛 {CURRENT_VISUAL['site_title']}
+            <h2 style="color:{APP_CONFIG['primary_color']}; text-align:center; margin-bottom:0;">
+                🚛 {APP_CONFIG['site_title']}
             </h2>
             """,
             unsafe_allow_html=True,
         )
 
-    st.markdown(f"**{CURRENT_VISUAL['site_title']}**")
-    st.caption(CURRENT_VISUAL["site_subtitle"])
+    st.markdown(f"**{APP_CONFIG['site_title']}**")
+    st.caption(APP_CONFIG["site_subtitle"])
 
     if st.session_state.user:
         username = st.session_state.user.get("username", "Utilisateur")
@@ -197,7 +205,7 @@ with st.sidebar:
                 "border-radius": "8px",
             },
             "nav-link-selected": {
-                "background-color": CURRENT_VISUAL["primary_color"],
+                "background-color": APP_CONFIG["primary_color"],
                 "color": "white",
             },
         },
@@ -206,10 +214,13 @@ with st.sidebar:
     st.markdown("---")
 
     theme_options = ["Municipal Bleu", "Mode Clair", "Mode Sombre"]
-    current_theme = st.session_state.get("theme", DEFAULT_CONFIG["default_theme"])
+    current_theme = st.session_state.get(
+        "theme",
+        APP_CONFIG.get("default_theme", DEFAULT_CONFIG["default_theme"]),
+    )
 
     if current_theme not in theme_options:
-        current_theme = DEFAULT_CONFIG["default_theme"]
+        current_theme = APP_CONFIG.get("default_theme", DEFAULT_CONFIG["default_theme"])
 
     theme_choice = st.selectbox(
         "🎨 Thème",
@@ -234,6 +245,7 @@ with st.sidebar:
         st.rerun()
 
 
+# ====================== ROUTING ======================
 user = st.session_state.user
 
 if user is None:
@@ -297,6 +309,8 @@ else:
         else:
             st.info("🚧 Page en cours de développement...")
 
+
+# ====================== FOOTER ======================
 st.markdown(
     """
     <div class="custom-footer">
