@@ -1,4 +1,11 @@
-======= CHEMINS DE BASE ======================
+# config.py
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# ====================== CHEMINS DE BASE ======================
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 ASSETS_DIR = BASE_DIR / "assets"
