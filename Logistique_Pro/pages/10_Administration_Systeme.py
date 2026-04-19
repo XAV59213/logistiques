@@ -1,111 +1,125 @@
-# pages/10_Administration_Systeme.py
+# pages/08_Planning_Equipes.py
 """
-Page Administration Système
-Gestion technique complète de l'application :
-- Configuration SMTP + test d'envoi
-- Sauvegardes & restauration
-- Statistiques système détaillées
-- Mode Maintenance
-- Journal d'audit
-- Gestion des fournisseurs, véhicules, carburants, assurances et maintenance
+Page Planning Équipes
+Vue simple du planning des interventions pour les équipes internes.
 """
 
-import streamlit as st
-from pathlib import Path
-import shutil
-import psutil
-import datetime
-import utils.database as db
-from config import DATA_DIR, BACKUPS_DIR, DEFAULT_CONFIG
+from datetime import datetime
 import pandas as pd
+import streamlit as st
+
 
 def show() -> None:
-    """Affiche la page Administration Système."""
-    st.title("⚙️ Administration Système")
-    st.caption("Configuration technique, sauvegardes, statistiques et maintenance")
+    st.title("📅 Planning Équipes")
+    st.caption("Organisation des interventions et suivi opérationnel")
 
     user = st.session_state.user
-    if not user or user["role"] != "admin":
-        st.error("Accès réservé aux administrateurs.")
+    if not user:
+        st.error("Vous devez être connecté.")
         st.stop()
 
-    # Organisation en onglets
-    tab_smtp, tab_backup, tab_stats, tab_maintenance, tab_audit, tab_gestion = st.tabs([
-        "📧 Configuration Email", "💾 Sauvegardes", "📊 Statistiques", 
-        "🛠️ Maintenance", "📋 Journal d'Audit", "🔧 Gestion Avancée"
-    ])
+    role = user.get("role")
+    if role not in ["admin", "interne", "equipe_interne"]:
+        st.error("Accès réservé aux équipes internes et administrateurs.")
+        st.stop()
 
-    with tab_smtp:
-        st.subheader("Configuration SMTP")
-        smtp_server = st.text_input("Serveur SMTP", value="smtp.gmail.com")
-        smtp_port = st.number_input("Port", value=587)
-        smtp_email = st.text_input("Email expéditeur")
-        smtp_password = st.text_input("Mot de passe", type="password")
-        use_tls = st.checkbox("Utiliser TLS", value=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        equipe = st.selectbox(
+            "Équipe",
+            ["Toutes", "Équipe Alpha", "Équipe Beta", "Équipe Technique", "Équipe Logistique"]
+        )
+    with col2:
+        periode = st.selectbox(
+            "Période",
+            ["Aujourd'hui", "Cette semaine", "Ce mois"]
+        )
+    with col3:
+        statut = st.selectbox(
+            "Statut",
+            ["Tous", "Planifiée", "En cours", "Terminée"]
+        )
 
-        if st.button("🔍 Tester l'envoi d'email"):
-            st.info("Simulation de test SMTP - Email envoyé avec succès (mode démo).")
-            st.success("✅ Test SMTP réussi !")
+    planning_data = [
+        {
+            "Date": "21/04/2026",
+            "Heure": "08:00",
+            "Équipe": "Équipe Alpha",
+            "Mission": "Montage barnum",
+            "Lieu": "Salle des Fêtes",
+            "Véhicule": "Renault Master",
+            "Statut": "Planifiée",
+        },
+        {
+            "Date": "21/04/2026",
+            "Heure": "13:30",
+            "Équipe": "Équipe Beta",
+            "Mission": "Livraison chaises et tables",
+            "Lieu": "Parc communal",
+            "Véhicule": "Peugeot Boxer",
+            "Statut": "En cours",
+        },
+        {
+            "Date": "22/04/2026",
+            "Heure": "09:00",
+            "Équipe": "Équipe Technique",
+            "Mission": "Installation sonorisation",
+            "Lieu": "Place de l'Église",
+            "Véhicule": "Citroën Jumper",
+            "Statut": "Planifiée",
+        },
+        {
+            "Date": "23/04/2026",
+            "Heure": "14:00",
+            "Équipe": "Équipe Logistique",
+            "Mission": "Contrôle inventaire",
+            "Lieu": "Entrepôt A",
+            "Véhicule": "Aucun",
+            "Statut": "Terminée",
+        },
+    ]
 
-    with tab_backup:
-        st.subheader("Sauvegardes de la base de données")
-        if st.button("💾 Sauvegarde manuelle maintenant"):
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_path = BACKUPS_DIR / f"backup_{timestamp}.db"
-            shutil.copy(db.DB_PATH, backup_path)
-            st.success(f"✅ Sauvegarde créée : {backup_path.name}")
+    df = pd.DataFrame(planning_data)
 
-        st.subheader("Historique des sauvegardes")
-        backups = list(BACKUPS_DIR.glob("*.db"))
-        if backups:
-            backup_list = []
-            for b in sorted(backups, reverse=True):
-                backup_list.append({
-                    "Nom": b.name,
-                    "Taille": f"{b.stat().st_size / (1024*1024):.2f} MB",
-                    "Date": datetime.datetime.fromtimestamp(b.stat().st_mtime).strftime("%d/%m/%Y %H:%M")
-                })
-            st.dataframe(pd.DataFrame(backup_list), use_container_width=True)
-        else:
-            st.info("Aucune sauvegarde disponible pour le moment.")
+    if equipe != "Toutes":
+        df = df[df["Équipe"] == equipe]
 
-    with tab_stats:
-        st.subheader("Statistiques Système")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Utilisateurs totaux", "142")
-            st.metric("Demandes en cours", "18")
-        with col2:
-            st.metric("Articles en stock", "1 248")
-            st.metric("Véhicules en service", "12")
-        with col3:
-            disk = psutil.disk_usage('/')
-            st.metric("Espace disque utilisé", f"{disk.percent}%")
-            st.metric("Taille base de données", "248 MB")
+    if statut != "Tous":
+        df = df[df["Statut"] == statut]
 
-        st.subheader("Dernières connexions")
-        st.info("Dernière connexion admin : il y a 2 heures")
+    st.subheader("📋 Planning des interventions")
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
-    with tab_maintenance:
-        st.subheader("Mode Maintenance")
-        maintenance_mode = st.toggle("Activer le mode maintenance", value=False)
-        if maintenance_mode:
-            st.warning("🚧 L'application est en mode maintenance. Seuls les administrateurs peuvent accéder.")
-        
-        if st.button("🧹 Purger les anciennes notifications (> 90 jours)"):
-            st.success("✅ Purge effectuée avec succès.")
+    st.subheader("⚡ Actions rapides")
+    col_a, col_b, col_c = st.columns(3)
 
-    with tab_audit:
-        st.subheader("Journal d'Audit")
-        st.info("Dernières actions administratives :")
-        audit_data = [
-            {"Date": "19/04/2026 09:15", "Utilisateur": "admin", "Action": "Validation d'une demande"},
-            {"Date": "19/04/2026 08:42", "Utilisateur": "admin", "Action": "Modification d'un véhicule"},
-        ]
-        st.dataframe(pd.DataFrame(audit_data), use_container_width=True)
+    with col_a:
+        if st.button("➕ Ajouter une intervention", use_container_width=True):
+            st.success("Formulaire d'ajout d'intervention à connecter à la base de données.")
 
-    with tab_gestion:
-        st.subheader("Gestion Avancée")
-        st.info("Gestion des fournisseurs, véhicules, carburants, assurances et maintenance disponible ici.")
+    with col_b:
+        if st.button("✅ Marquer une mission terminée", use_container_width=True):
+            st.success("Action de clôture à relier au planning réel.")
+
+    with col_c:
+        if st.button("📤 Exporter le planning", use_container_width=True):
+            csv_data = df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "Télécharger planning_equipes.csv",
+                data=csv_data,
+                file_name="planning_equipes.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="download_planning_equipes",
+            )
+
+    st.subheader("📌 Résumé")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Missions affichées", len(df))
+    with c2:
+        st.metric("En cours", len(df[df["Statut"] == "En cours"]))
+    with c3:
+        st.metric("Planifiées", len(df[df["Statut"] == "Planifiée"]))
 
     st.caption("© 2026 Ville de Marly - Développé par xavier59213")
