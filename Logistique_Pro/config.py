@@ -19,6 +19,7 @@ ASSURANCES_DIR = ASSETS_DIR / "assurances"
 MAINTENANCE_VEHICULES_DIR = ASSETS_DIR / "maintenance_vehicules"
 OUTILS_DIR = ASSETS_DIR / "outils"
 SIGNATURES_DIR = ASSETS_DIR / "signatures"
+
 BACKUPS_DIR = DATA_DIR / "backups"
 RESERVATIONS_DIR = DATA_DIR / "reservations"
 STOCK_DIR = DATA_DIR / "stock"
@@ -45,6 +46,7 @@ for directory in [
 
 DB_PATH = str(DATA_DIR / "logistique_marly.db")
 
+# ====================== CONFIG PAR DÉFAUT ======================
 DEFAULT_CONFIG = {
     "site_title": "Logistique Pro - Ville de Marly",
     "site_subtitle": "Service Logistique & Événements",
@@ -87,9 +89,74 @@ WEATHER_CITY = os.getenv("WEATHER_CITY", "Marly")
 STREAMLIT_SERVER_PORT = os.getenv("STREAMLIT_SERVER_PORT", "8501")
 STREAMLIT_SERVER_ADDRESS = os.getenv("STREAMLIT_SERVER_ADDRESS", "0.0.0.0")
 
+# ====================== CLÉS SETTINGS PERSISTÉES ======================
+SETTINGS_KEYS = {
+    "site_title": "site_title",
+    "site_subtitle": "site_subtitle",
+    "primary_color": "primary_color",
+    "secondary_color": "secondary_color",
+    "accent_color": "accent_color",
+}
 
-def init_config():
-    return DEFAULT_CONFIG
+
+def init_config() -> dict:
+    return DEFAULT_CONFIG.copy()
+
+
+def _get_db_setting(key: str, default: str) -> str:
+    """
+    Lecture paresseuse des settings en base pour éviter les imports circulaires.
+    Si la base ou utils.database n'est pas encore prêt, on retourne le fallback.
+    """
+    try:
+        from utils.database import get_setting  # import local volontaire
+        value = get_setting(key, default)
+        return value if value not in [None, ""] else default
+    except Exception:
+        return default
+
+
+def get_runtime_visual_config() -> dict:
+    """
+    Retourne la configuration visuelle effective.
+    Priorité :
+    1. table settings en base
+    2. DEFAULT_CONFIG
+    """
+    return {
+        "site_title": _get_db_setting(SETTINGS_KEYS["site_title"], DEFAULT_CONFIG["site_title"]),
+        "site_subtitle": _get_db_setting(SETTINGS_KEYS["site_subtitle"], DEFAULT_CONFIG["site_subtitle"]),
+        "primary_color": _get_db_setting(SETTINGS_KEYS["primary_color"], DEFAULT_CONFIG["primary_color"]),
+        "secondary_color": _get_db_setting(SETTINGS_KEYS["secondary_color"], DEFAULT_CONFIG["secondary_color"]),
+        "accent_color": _get_db_setting(SETTINGS_KEYS["accent_color"], DEFAULT_CONFIG["accent_color"]),
+        "contact_email": DEFAULT_CONFIG["contact_email"],
+        "contact_phone": DEFAULT_CONFIG["contact_phone"],
+        "address": DEFAULT_CONFIG["address"],
+        "default_theme": DEFAULT_THEME or DEFAULT_CONFIG["default_theme"],
+    }
+
+
+def get_runtime_config() -> dict:
+    """
+    Retourne la configuration globale effective de l'application.
+    Les paramètres visuels viennent d'abord de la base.
+    Le reste vient du fallback/env.
+    """
+    visual = get_runtime_visual_config()
+
+    return {
+        "site_title": visual["site_title"],
+        "site_subtitle": visual["site_subtitle"],
+        "primary_color": visual["primary_color"],
+        "secondary_color": visual["secondary_color"],
+        "accent_color": visual["accent_color"],
+        "contact_email": DEFAULT_CONFIG["contact_email"],
+        "contact_phone": DEFAULT_CONFIG["contact_phone"],
+        "address": DEFAULT_CONFIG["address"],
+        "default_theme": DEFAULT_THEME or DEFAULT_CONFIG["default_theme"],
+        "app_name": APP_NAME,
+        "app_env": APP_ENV,
+    }
 
 
 class Config:
@@ -106,6 +173,7 @@ class Config:
     MAINTENANCE_VEHICULES_DIR = MAINTENANCE_VEHICULES_DIR
     OUTILS_DIR = OUTILS_DIR
     SIGNATURES_DIR = SIGNATURES_DIR
+
     BACKUPS_DIR = BACKUPS_DIR
     RESERVATIONS_DIR = RESERVATIONS_DIR
     STOCK_DIR = STOCK_DIR
@@ -141,7 +209,17 @@ class Config:
     STREAMLIT_SERVER_PORT = STREAMLIT_SERVER_PORT
     STREAMLIT_SERVER_ADDRESS = STREAMLIT_SERVER_ADDRESS
 
+    SETTINGS_KEYS = SETTINGS_KEYS
+
+    @staticmethod
+    def runtime_visual_config() -> dict:
+        return get_runtime_visual_config()
+
+    @staticmethod
+    def runtime_config() -> dict:
+        return get_runtime_config()
+
 
 if __name__ == "__main__":
-    init_config()
     print("✅ Configuration initialisée avec succès.")
+    print(get_runtime_config())
