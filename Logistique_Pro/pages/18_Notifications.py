@@ -70,7 +70,7 @@ else:
 
             with c2:
                 if int(row["is_read"]) == 0:
-                    if st.button("Marquer lue", key=f"read_{row['id']}", use_container_width=True):
+                    if st.button("Marquer lue", key=f"read_{row['id']}", width="stretch"):
                         cur.execute(
                             "UPDATE notifications SET is_read = 1 WHERE id = ?",
                             (int(row["id"]),)
@@ -78,7 +78,7 @@ else:
                         conn.commit()
                         st.rerun()
                 else:
-                    if st.button("Remettre non lue", key=f"unread_{row['id']}", use_container_width=True):
+                    if st.button("Remettre non lue", key=f"unread_{row['id']}", width="stretch"):
                         cur.execute(
                             "UPDATE notifications SET is_read = 0 WHERE id = ?",
                             (int(row["id"]),)
