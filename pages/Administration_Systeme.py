@@ -587,7 +587,7 @@ def show() -> None:
 
     user = st.session_state.get("user")
 
-    if not user or str(user.get("role", "")).lower() != "admin":
+    if not user or str(user.get("role", "").lower()) != "admin":
         st.error("Accès réservé aux administrateurs.")
         st.stop()
 
@@ -603,6 +603,7 @@ def show() -> None:
             "📜 Journal",
             "📦 Exports",
             "ℹ️ Aide",
+            "🚀 Mise à jour",
         ]
     )
 
@@ -636,46 +637,46 @@ def show() -> None:
     with tabs[9]:
         render_help()
 
+    with tabs[10]:
+        # ==================== 🚀 MISE À JOUR AUTOMATIQUE (VERSION FINALE PROPRE) ====================
+        st.markdown("---")
+        st.subheader("🚀 Mise à jour automatique depuis GitHub")
+        st.caption("Mettez à jour l’application en 1 clic dès qu’une nouvelle release est créée sur GitHub")
 
-# ==================== 🚀 MISE À JOUR AUTOMATIQUE (VERSION FINALE PROPRE) ====================
-st.markdown("---")
-st.subheader("🚀 Mise à jour automatique depuis GitHub")
-st.caption("Mettez à jour l’application en 1 clic dès qu’une nouvelle release est créée sur GitHub")
+        col1, col2 = st.columns([3, 1])
 
-col1, col2 = st.columns([3, 1])
+        with col1:
+            if st.button("🔄 Vérifier la dernière release", type="primary", use_container_width=True, key="check_release_final"):
+                with st.spinner("Connexion à GitHub..."):
+                    try:
+                        import requests
+                        r = requests.get("https://api.github.com/repos/XAV59213/logistiques/releases/latest", timeout=10)
+                        if r.status_code == 200:
+                            data = r.json()
+                            st.success(f"✅ **Dernière release : {data['tag_name']}**")
+                            if data.get("body"):
+                                st.markdown(data["body"])
+                        else:
+                            st.error("Impossible de contacter GitHub")
+                    except Exception as e:
+                        st.error(f"Erreur : {e}")
 
-with col1:
-    if st.button("🔄 Vérifier la dernière release", type="primary", use_container_width=True, key="check_release_final"):
-        with st.spinner("Connexion à GitHub..."):
-            try:
-                import requests
-                r = requests.get("https://api.github.com/repos/XAV59213/logistiques/releases/latest", timeout=10)
-                if r.status_code == 200:
-                    data = r.json()
-                    st.success(f"✅ **Dernière release : {data['tag_name']}**")
-                    if data.get("body"):
-                        st.markdown(data["body"])
-                else:
-                    st.error("Impossible de contacter GitHub")
-            except Exception as e:
-                st.error(f"Erreur : {e}")
-
-with col2:
-    if st.button("🚀 Mettre à jour maintenant depuis la release", type="secondary", use_container_width=True, key="update_release_final"):
-        with st.spinner("Mise à jour en cours..."):
-            import subprocess
-            try:
-                result = subprocess.run(["git", "pull", "origin", "main"], cwd="/opt/logistique-pro", capture_output=True, text=True, timeout=30)
-                if result.returncode == 0:
-                    st.success("✅ Mise à jour terminée ! Redémarrage en cours...")
-                    subprocess.run(["pkill", "-f", "streamlit"], check=False)
-                    subprocess.Popen(["nohup", ".venv/bin/streamlit", "run", "main.py", "--server.port", "8501", "--server.address", "0.0.0.0", ">", "streamlit.log", "2>&1", "&"], cwd="/opt/logistique-pro", shell=True)
-                    st.rerun()
-                else:
-                    st.error("Erreur git pull")
-                    st.code(result.stderr)
-            except Exception as e:
-                st.error(f"Erreur : {e}")
+        with col2:
+            if st.button("🚀 Mettre à jour maintenant depuis la release", type="secondary", use_container_width=True, key="update_release_final"):
+                with st.spinner("Mise à jour en cours..."):
+                    import subprocess
+                    try:
+                        result = subprocess.run(["git", "pull", "origin", "main"], cwd="/opt/logistique-pro", capture_output=True, text=True, timeout=30)
+                        if result.returncode == 0:
+                            st.success("✅ Mise à jour terminée ! Redémarrage en cours...")
+                            subprocess.run(["pkill", "-f", "streamlit"], check=False)
+                            subprocess.Popen(["nohup", ".venv/bin/streamlit", "run", "main.py", "--server.port", "8501", "--server.address", "0.0.0.0", ">", "streamlit.log", "2>&1", "&"], cwd="/opt/logistique-pro", shell=True)
+                            st.rerun()
+                        else:
+                            st.error("Erreur git pull")
+                            st.code(result.stderr)
+                    except Exception as e:
+                        st.error(f"Erreur : {e}")
 
 if __name__ == "__main__":
     show()
