@@ -1,94 +1,80 @@
-# =====================================================
-# ENVIRONNEMENT PYTHON
-# =====================================================
+# Environnements Python
 .venv/
 venv/
 env/
+ENV/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# =====================================================
-# FICHIERS SYSTEME
-# =====================================================
+# Fichiers secrets
+.env
+.env.*
+!.env.example
+secrets.toml
+.streamlit/secrets.toml
+
+# Logs
+*.log
+logs/
+data/logs/
+
+# Sauvegardes
+data/backups/
+data/patch_backups/
+backups/
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+
+# Bases réelles avec données
+*.db
+*.sqlite
+*.sqlite3
+
+# Bases vides autorisées
+!data/db_empty/
+!data/db_empty/*.db
+!data/db_empty/*.sqlite
+!data/db_empty/*.sqlite3
+
+# Imports / exports locaux
+data/imports/
+data/exports/
+
+# Images / médias / uploads
+assets/photos/
+assets/images/
+assets/uploads/
+uploads/
+static/uploads/
+static/images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tiff
+*.ico
+*.svg
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.mp3
+*.wav
+*.pdf
+
+# Système / IDE
 .DS_Store
 Thumbs.db
-
-# =====================================================
-# CONFIG / SECRETS
-# =====================================================
-.env
-.env.local
-.env.*.local
-
-# =====================================================
-# BASE DE DONNEES
-# =====================================================
-data/database.db
-*.sqlite
-*.db
-
-# =====================================================
-# LOGS
-# =====================================================
-data/app.log
-*.log
-
-# =====================================================
-# DONNEES DYNAMIQUES (NE PAS VERSIONNER)
-# =====================================================
-data/backups/*
-data/reservations/*
-data/stock/*
-data/inventaires/*
-
-# GARDER LA STRUCTURE DES DOSSIERS
-!data/backups/.gitkeep
-!data/reservations/.gitkeep
-!data/stock/.gitkeep
-!data/inventaires/.gitkeep
-
-# =====================================================
-# ASSETS DYNAMIQUES
-# =====================================================
-assets/photos/*
-assets/icons/*
-
-!assets/photos/.gitkeep
-!assets/icons/.gitkeep
-
-# QR codes générés
-assets/photos/qr/*
-
-# =====================================================
-# DOSSIER STATIC
-# =====================================================
-static/photos/*
-
-!static/photos/.gitkeep
-
-# =====================================================
-# EXPORTS / FICHIERS TEMPORAIRES
-# =====================================================
-*.csv
-*.xlsx
-*.zip
-
-# =====================================================
-# IDE / EDITEURS
-# =====================================================
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# =====================================================
-# STREAMLIT
-# =====================================================
-.streamlit/
-
-# =====================================================
-# CACHE
-# =====================================================
-.cache/
