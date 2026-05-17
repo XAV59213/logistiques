@@ -301,7 +301,7 @@ else:
             load_page("pages.09_Administration")
 
         elif selected == "Administration Système" and user_role == "admin":
-            load_page("pages.Administration_Systeme")
+            load_page("pages.10_Administration_Systeme")
 
         elif selected == "Exports & Backups" and user_role == "admin":
             load_page("pages.19_Exports_Backups")

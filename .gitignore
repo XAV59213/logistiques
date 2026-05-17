@@ -1,4 +1,4 @@
-# Environnements Python
+# Python
 .venv/
 venv/
 env/
@@ -8,7 +8,7 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Fichiers secrets
+# Secrets
 .env
 .env.*
 !.env.example
@@ -29,8 +29,9 @@ backups/
 *.tar.gz
 *.7z
 *.rar
+*.bak
 
-# Bases réelles avec données
+# Bases réelles
 *.db
 *.sqlite
 *.sqlite3
@@ -44,6 +45,12 @@ backups/
 # Imports / exports locaux
 data/imports/
 data/exports/
+
+# Données runtime locales
+data/inventaires/
+data/reservations/
+data/stock/
+data/patrimoine_db_path.txt
 
 # Images / médias / uploads
 assets/photos/
@@ -69,7 +76,7 @@ static/images/
 *.wav
 *.pdf
 
-# Système / IDE
+# Caches / IDE
 .DS_Store
 Thumbs.db
 .cache/
@@ -78,3 +85,8 @@ Thumbs.db
 .ruff_cache/
 .vscode/
 .idea/
+
+# Dossiers désactivés et fichiers temporaires de patch
+pages_disabled/
+Logistique_Pro/pages_disabled/
+main.py.bak_rename_pages

@@ -1,0 +1,17 @@
+streamlit>=1.42.0
+streamlit-option-menu
+pandas
+numpy
+sqlalchemy
+bcrypt
+weasyprint
+pillow
+requests
+plotly
+openpyxl
+psutil
+jinja2
+python-dotenv
+matplotlib
+qrcode[pil]
+reportlab
