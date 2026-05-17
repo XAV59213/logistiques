@@ -30,6 +30,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!Logistique_Pro/.env.example
 secrets.toml
 .streamlit/secrets.toml
 
@@ -41,12 +42,15 @@ data/logs/
 # Sauvegardes
 data/backups/
 data/patch_backups/
+Logistique_Pro/data/backups/
+Logistique_Pro/data/patch_backups/
 backups/
 *.zip
 *.tar
 *.tar.gz
 *.7z
 *.rar
+*.bak
 
 # Bases réelles avec données
 *.db
@@ -62,6 +66,12 @@ backups/
 # Imports / exports locaux
 data/imports/
 data/exports/
+
+# Données runtime locales
+data/inventaires/
+data/reservations/
+data/stock/
+data/patrimoine_db_path.txt
 
 # Images / médias / uploads
 assets/photos/
@@ -86,6 +96,10 @@ static/images/
 *.mp3
 *.wav
 *.pdf
+
+# Pages / dossiers désactivés
+pages_disabled/
+Logistique_Pro/pages_disabled/
 
 # Système / IDE
 .DS_Store
@@ -147,6 +161,7 @@ def create_local_backup() -> Path:
         "__pycache__",
         "backups",
         "patch_backups",
+        "pages_disabled",
     }
 
     with tarfile.open(backup, "w:gz") as tar:
@@ -284,7 +299,11 @@ def remove_cached_excluded_files() -> str:
         ["git", "rm", "-r", "--cached", "ENV"],
         ["git", "rm", "-r", "--cached", "data/backups"],
         ["git", "rm", "-r", "--cached", "data/patch_backups"],
+        ["git", "rm", "-r", "--cached", "Logistique_Pro/data/patch_backups"],
+        ["git", "rm", "-r", "--cached", "Logistique_Pro/data/backups"],
         ["git", "rm", "-r", "--cached", "backups"],
+        ["git", "rm", "-r", "--cached", "pages_disabled"],
+        ["git", "rm", "-r", "--cached", "Logistique_Pro/pages_disabled"],
         ["git", "rm", "-r", "--cached", "assets/photos"],
         ["git", "rm", "-r", "--cached", "assets/images"],
         ["git", "rm", "-r", "--cached", "assets/uploads"],
@@ -302,7 +321,7 @@ def remove_cached_excluded_files() -> str:
 
     shell_commands = [
         "git ls-files | grep -Ei '\\.(png|jpg|jpeg|gif|webp|bmp|tiff|ico|svg|mp4|mov|avi|mkv|mp3|wav|pdf)$' | xargs -r git rm --cached --",
-        "git ls-files | grep -Ei '\\.(zip|tar|tar\\.gz|7z|rar|log)$' | xargs -r git rm --cached --",
+        "git ls-files | grep -Ei '\\.(zip|tar|tar\\.gz|7z|rar|log|bak)$' | xargs -r git rm --cached --",
         "git ls-files | grep -Ei '(^|/)\\.env(\\.|$)|secrets\\.toml$' | xargs -r git rm --cached --",
         "git ls-files | grep -Ei '\\.(db|sqlite|sqlite3)$' | grep -v '^data/db_empty/' | xargs -r git rm --cached --",
     ]
@@ -318,6 +337,8 @@ def remove_cached_excluded_files() -> str:
 def git_add_files() -> tuple[bool, str]:
     commands = [
         ["git", "add", ".gitignore"],
+        ["git", "add", ".env.example"],
+        ["git", "add", "Logistique_Pro/.env.example"],
         ["git", "add", "administration_systeme/"],
         ["git", "add", "pages/Administration_Systeme.py"],
         ["git", "add", "data/db_empty/"],

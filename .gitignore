@@ -12,6 +12,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!Logistique_Pro/.env.example
 secrets.toml
 .streamlit/secrets.toml
 
@@ -23,6 +24,8 @@ data/logs/
 # Sauvegardes
 data/backups/
 data/patch_backups/
+Logistique_Pro/data/backups/
+Logistique_Pro/data/patch_backups/
 backups/
 *.zip
 *.tar
@@ -76,6 +79,10 @@ static/images/
 *.wav
 *.pdf
 
+# Dossiers désactivés
+pages_disabled/
+Logistique_Pro/pages_disabled/
+
 # Caches / IDE
 .DS_Store
 Thumbs.db
@@ -85,16 +92,3 @@ Thumbs.db
 .ruff_cache/
 .vscode/
 .idea/
-
-# Dossiers désactivés et fichiers temporaires de patch
-pages_disabled/
-Logistique_Pro/pages_disabled/
-main.py.bak_rename_pages
-
-# Sauvegardes dans ancien dossier Logistique_Pro
-Logistique_Pro/data/patch_backups/
-Logistique_Pro/data/backups/
-Logistique_Pro/pages_disabled/
-
-# Env example dans sous-dossier autorisé
-!Logistique_Pro/.env.example
