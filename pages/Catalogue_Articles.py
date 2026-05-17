@@ -4,6 +4,7 @@ from datetime import datetime
 import uuid
 import pandas as pd
 import streamlit as st
+from modules.catalogue_articles_pdf_export import render_articles_pdf_export_button
 
 from utils.catalogue_settings import (
     ensure_catalogue_settings,
@@ -394,6 +395,30 @@ def show():
                         st.rerun()
 
     st.divider()
+
+    # PDF_EXPORT_ARTICLES_START
+    st.divider()
+    _pdf_articles_df = None
+    for _pdf_var_name in [
+        'filtered',
+        'filtered_df',
+        'df_filtered',
+        'articles_filtered',
+        'articles',
+        'df',
+    ]:
+        _pdf_value = locals().get(_pdf_var_name)
+        if _pdf_value is not None and hasattr(_pdf_value, 'empty') and hasattr(_pdf_value, 'columns'):
+            _pdf_articles_df = _pdf_value
+            break
+    
+    if _pdf_articles_df is not None:
+        render_articles_pdf_export_button(_pdf_articles_df)
+    else:
+        st.warning('Export PDF articles indisponible : aucune liste d’articles trouvée.')
+    st.divider()
+    # PDF_EXPORT_ARTICLES_END
+
     st.subheader("📋 Articles disponibles")
 
     display_cols = st.selectbox(

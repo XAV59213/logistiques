@@ -8,6 +8,8 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
+from modules.catalogue_batiments_pdf_export import render_pdf_export_button
+from modules.batiments_documents_view import render_documents_view
 
 
 PROJECT_DIR = Path("/opt/logistique-pro")
@@ -324,37 +326,73 @@ def find_photo(row: pd.Series) -> Path | None:
     return None
 
 
-def render_image(row: pd.Series) -> None:
+
+def _st_image_stretch(img) -> None:
+    try:
+        st.image(img, width="stretch")
+    except TypeError:
+        st.image(img, use_container_width=True)
+
+
+def render_catalogue_image(image_path) -> None:
+    try:
+        from PIL import Image, ImageOps
+
+        img = Image.open(image_path).convert("RGB")
+
+        try:
+            resampling = Image.Resampling.LANCZOS
+        except Exception:
+            resampling = Image.LANCZOS
+
+        # Même principe que Catalogue Véhicules : toutes les images ont le même ratio.
+        img = ImageOps.fit(img, (900, 560), method=resampling)
+        _st_image_stretch(img)
+
+    except Exception:
+        try:
+            _st_image_stretch(str(image_path))
+        except Exception:
+            render_catalogue_placeholder("Image non lisible")
+
+
+def render_catalogue_placeholder(text: str = "Aucune image") -> None:
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+
+        img = Image.new("RGB", (900, 560), color=(232, 241, 251))
+        draw = ImageDraw.Draw(img)
+
+        try:
+            font = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
+        except Exception:
+            font = ImageFont.load_default()
+
+        bbox = draw.textbbox((0, 0), text, font=font)
+        w = bbox[2] - bbox[0]
+        h = bbox[3] - bbox[1]
+
+        draw.text(
+            ((900 - w) / 2, (560 - h) / 2),
+            text,
+            fill=(0, 51, 102),
+            font=font,
+        )
+
+        _st_image_stretch(img)
+
+    except Exception:
+        st.info(text)
+
+
+def render_image(row) -> None:
     photo = find_photo(row)
 
     if photo:
-        st.image(str(photo), use_container_width=True)
+        render_catalogue_image(photo)
     else:
-        st.markdown(
-            """
-            <div style="
-                width:100%;
-                aspect-ratio: 900 / 560;
-                border-radius: 12px;
-                background: #eaf2fb;
-                color: #2f5d87;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                text-align:center;
-                font-weight:700;
-                margin-bottom:12px;
-            ">
-                Aucune image
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        render_catalogue_placeholder("Aucune image")
 
-
-# ============================================================
-# Contrôles
-# ============================================================
 
 def link_controls(row: pd.Series, controles: pd.DataFrame) -> pd.DataFrame:
     if controles is None or controles.empty:
@@ -554,6 +592,56 @@ def render_entretiens(row: pd.Series, entretiens: pd.DataFrame) -> None:
     st.dataframe(linked.head(20), width="stretch", hide_index=True)
 
 
+
+def inject_catalogue_batiments_image_css() -> None:
+    st.markdown(
+        """
+        <style>
+        /* Images des cartes bâtiments */
+        section.main div[data-testid="stImage"] img,
+        div[data-testid="stMain"] div[data-testid="stImage"] img {
+            width: 100% !important;
+            height: 220px !important;
+            object-fit: cover !important;
+            object-position: center center !important;
+            border-radius: 10px !important;
+            border: 1px solid #dbe3ef !important;
+            background: #e8f1fb !important;
+        }
+
+        /* Conteneur image */
+        section.main div[data-testid="stImage"],
+        div[data-testid="stMain"] div[data-testid="stImage"] {
+            width: 100% !important;
+            min-height: 220px !important;
+            max-height: 220px !important;
+            overflow: hidden !important;
+            border-radius: 10px !important;
+        }
+
+        /* Harmonise les blocs sans image si présents */
+        .cat-bat-no-image,
+        .no-photo,
+        .no-image {
+            width: 100% !important;
+            height: 220px !important;
+            min-height: 220px !important;
+            max-height: 220px !important;
+            border-radius: 10px !important;
+            background: #e8f1fb !important;
+            color: #003366 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-weight: 700 !important;
+            border: 1px solid #dbe3ef !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 # ============================================================
 # Carte bâtiment
 # ============================================================
@@ -610,6 +698,12 @@ def render_card(row: pd.Series, controles: pd.DataFrame, entretiens: pd.DataFram
     with st.expander("🛠️ Entretiens"):
         render_entretiens(row, entretiens)
 
+    with st.expander("📎 Documents", expanded=False):
+        render_documents_view(
+            batiment_nom=get_batiment_name(row),
+            batiment_id=row.get("id", None) if hasattr(row, "get") else None,
+        )
+
     with st.expander("🔎 Détail complet"):
         render_detail(row)
 
@@ -617,6 +711,7 @@ def render_card(row: pd.Series, controles: pd.DataFrame, entretiens: pd.DataFram
 # ============================================================
 # Filtres et statistiques
 # ============================================================
+
 
 def build_filter_options(df: pd.DataFrame, getter) -> list[str]:
     values = []
@@ -731,6 +826,22 @@ def export_csv_button(df: pd.DataFrame) -> None:
 # Affichage cartes
 # ============================================================
 
+
+st.divider()
+
+_pdf_df = None
+for _pdf_var_name in ["filtered", "filtered_df", "df_filtered", "batiments_filtered", "batiments", "df"]:
+    _pdf_value = locals().get(_pdf_var_name)
+    if _pdf_value is not None:
+        _pdf_df = _pdf_value
+        break
+
+if _pdf_df is not None:
+    render_pdf_export_button(_pdf_df)
+else:
+    st.warning("Export PDF indisponible : aucune liste de bâtiments trouvée.")
+
+
 def render_cards(df: pd.DataFrame, controles: pd.DataFrame, entretiens: pd.DataFrame) -> None:
     if df.empty:
         st.info("Aucun bâtiment à afficher.")
@@ -789,6 +900,8 @@ def render_cards(df: pd.DataFrame, controles: pd.DataFrame, entretiens: pd.DataF
 # ============================================================
 
 def render() -> None:
+    inject_catalogue_batiments_image_css()
+
     st.title("🏢 Bâtiments de catalogue")
     st.caption("Patrimoine bâti disponible.")
 
@@ -814,6 +927,12 @@ def render() -> None:
     st.divider()
 
     export_csv_button(filtered)
+
+    st.divider()
+
+    render_pdf_export_button(filtered)
+
+
 
     st.divider()
 

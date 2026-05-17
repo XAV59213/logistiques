@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
+from modules.catalogue_vehicules_pdf_export import render_vehicules_pdf_export_button
 
 
 PROJECT_DIR = Path("/opt/logistique-pro")
@@ -418,6 +419,8 @@ def render() -> None:
 
     st.divider()
 
+    render_vehicules_pdf_export_button(filtered)
+    st.divider()
     render_cards(filtered, entretiens)
 
 

@@ -34,7 +34,7 @@ backups/
 *.rar
 *.bak
 
-# Bases réelles
+# Bases réelles avec données
 *.db
 *.sqlite
 *.sqlite3
