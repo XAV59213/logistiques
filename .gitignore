@@ -90,3 +90,11 @@ Thumbs.db
 pages_disabled/
 Logistique_Pro/pages_disabled/
 main.py.bak_rename_pages
+
+# Sauvegardes dans ancien dossier Logistique_Pro
+Logistique_Pro/data/patch_backups/
+Logistique_Pro/data/backups/
+Logistique_Pro/pages_disabled/
+
+# Env example dans sous-dossier autorisé
+!Logistique_Pro/.env.example
